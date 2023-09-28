@@ -91,7 +91,7 @@ export const checkAdmin = async (req, res, next) => {
 }
 
 export const checkJWT = async (req, res, next, checkAdmin = false) => {
-    const token = req.cookies.jwt;
+    const token = req.cookies.jwt ?? res.headers.authorization?.split(" ")[1];
     if (!token) {
         return res.status(401).send({
             success: false,
