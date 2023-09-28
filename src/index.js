@@ -11,9 +11,21 @@ import slackController from './slack/slack.controller.js';
 const app = express();
 
 configureEnv();
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:5173',
+        'https://foodbot-devportal.vercel.app',
+    ],
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
 app.use(bodyParser.json());
 app.use(cookieParser());
+
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Headers', 'Set-Cookie');
+    next();
+})
 
 
 const PORT = process.env.PORT || 3000;
