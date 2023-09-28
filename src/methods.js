@@ -17,7 +17,7 @@ const prisma = new PrismaClient()
  * @async
  * @function
  * @param {...User} user - The user object
- * @returns {boolean} - Returns true if the user was added successfully
+ * @returns {boolean} - Returns true if the admin was added successfully
  */
 export const addAdmin = async (user) => {
     try {
@@ -26,6 +26,27 @@ export const addAdmin = async (user) => {
                 name: user.name,
                 email: user.email,
                 password: bcrypt.hashSync(user.password, Number(process.env.BCRYPT_SALT)),
+            },
+        })
+        return true;
+    } catch (e) {
+        console.log(e.message)
+        return false;
+    }
+}
+
+/**
+ * Add a new user
+ * @async
+ * @function
+ * @param {...User} user - The user object
+ * @returns {boolean} - Returns true if the user was added successfully
+ */
+export const addUser = async (user) => {
+    try {
+        await prisma.user.create({
+            data: {
+                name: user.name,
             },
         })
         return true;
@@ -88,4 +109,28 @@ export const checkJWT = async (req, res, next, checkAdmin = false) => {
             message: e.message
         })
     }
+}
+
+export const requestAppToken = async (username) => {
+    const user = await prisma.user.findUnique({
+        where: {
+            name: username
+        }
+    })
+    if(!user) {
+        await addUser({
+            name: username
+        })
+    }
+    
+}
+
+export const checkAppToken = async (username) => {
+    const user = await prisma.user.findUnique({
+        where: {
+            name: username
+        }
+    })
+    if(user.allowedAccess) return jwt.sign({ id: user.id, isAdmin: false }, process.env.JWT_SECRET)
+    return false;
 }
