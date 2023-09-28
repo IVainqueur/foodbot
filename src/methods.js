@@ -41,7 +41,7 @@ export const addAdmin = async (user) => {
  * @function
  * @param {...User} user - The user object
  */
-export const login = async(user) => {
+export const login = async (user) => {
     const admin = await prisma.admin.findUnique({
         where: {
             email: user.email
@@ -61,11 +61,15 @@ export const login = async(user) => {
     return {
         success: true,
         message: "Login successful",
-        token: jwt.sign({ id: admin.id }, process.env.JWT_SECRET, { expiresIn: '1d'})
+        token: jwt.sign({ id: admin.id, isAdmin: true }, process.env.JWT_SECRET, { expiresIn: '1d' })
     }
 }
 
 export const checkAdmin = async (req, res, next) => {
+    await checkJWT(req, res, next, true);
+}
+
+export const checkJWT = async (req, res, next, checkAdmin = false) => {
     const token = req.cookies.jwt;
     if (!token) {
         return res.status(401).send({
@@ -74,13 +78,14 @@ export const checkAdmin = async (req, res, next) => {
         })
     }
     try {
-        jwt.verify(token, process.env.JWT_SECRET);
+        const tokenData = jwt.verify(token, process.env.JWT_SECRET);
+        if (!tokenData.isAdmin && checkAdmin) throw new Error("Not ADMIN")
         console.log("[log] Admin authenticated")
         next();
     } catch (e) {
         return res.status(401).send({
             success: false,
-            message: "Unauthorized"
+            message: e.message
         })
     }
 }
