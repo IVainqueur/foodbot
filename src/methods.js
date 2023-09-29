@@ -91,14 +91,14 @@ export const checkAdmin = async (req, res, next) => {
 }
 
 export const checkJWT = async (req, res, next, checkAdmin = false) => {
-    const token = req.cookies.jwt ?? req.header('Authorization')?.split(" ")[1];
-    if (!token) {
-        return res.status(401).send({
-            success: false,
-            message: "Unauthorized"
-        })
-    }
     try {
+        const token = req.cookies.jwt ?? req.header('Authorization')?.split(" ")[1];
+        if (!token) {
+            return res.status(401).send({
+                success: false,
+                message: "Unauthorized"
+            })
+        }
         const tokenData = jwt.verify(token, process.env.JWT_SECRET);
         if (!tokenData.isAdmin && checkAdmin) throw new Error("Not ADMIN")
         console.log("[log] Admin authenticated")
@@ -117,12 +117,12 @@ export const requestAppToken = async (username) => {
             name: username
         }
     })
-    if(!user) {
+    if (!user) {
         await addUser({
             name: username
         })
     }
-    
+
 }
 
 export const checkAppToken = async (username) => {
@@ -131,6 +131,6 @@ export const checkAppToken = async (username) => {
             name: username
         }
     })
-    if(user.allowedAccess) return jwt.sign({ id: user.id, isAdmin: false }, process.env.JWT_SECRET)
+    if (user.allowedAccess) return jwt.sign({ id: user.id, isAdmin: false }, process.env.JWT_SECRET)
     return false;
 }
