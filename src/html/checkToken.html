@@ -76,10 +76,10 @@
                 class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
                 <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
                     <h1
-                        class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                        class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white" id="waitingStatus">
                         Waiting for admin approval...
                     </h1>
-
+                    <div id="success"></div>
                 </div>
             </div>
         </div>
@@ -87,6 +87,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.8.1/flowbite.min.js"></script>
     <script>
         const name = decodeURI(location.search).match(/name=([a-zA-Z0-9\s]+)/);
+        let token;
         if (!name) {
             window.location.href = '/request-token';
         }
@@ -97,22 +98,41 @@
         const waitFor = (ms) => new Promise(r => setTimeout(r, ms));
 
         const getToken = async () => {
-            fetch('/get-token/' + name[1])
-            .then(res => res.json())
-            .then(data => {
+            try {
+                const response = await fetch('/get-token/' + name[1])
+                const data = await response.json()
                 console.log(data)
-                if (data.token) {
-                    // window.location.href = '/token/' + data.token;
-                    console.log('token received')
-                } 
-            })
-            .catch(err => {
-                // waitFor(1000).then(() => getToken());
-                getToken()
-            });
+                if (!data.success) throw new Error("Not Authorized")
+                token = data.token
+                return true
+            } catch (e) {
+                console.log("[err]", e.message)
+                return false
+            }
         }
 
-        getToken();
+        const main = async () => {
+            while (true) {
+                const gotToken = await getToken()
+                if (gotToken) break;
+                await waitFor(5000)
+                console.log("retrying....")
+            }
+            document.querySelector('#waitingStatus').textContent = "Access Granted"
+            document.querySelector('div#success').innerHTML = `
+            <a href="food-bot://login?token=${token}">
+                <button 
+                    type="submit"
+                    class="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                    Return to App
+                </button>
+            </a>
+            `
+        }
+
+        main()
+
+
     </script>
 </body>
 
